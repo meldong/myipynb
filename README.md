@@ -15,6 +15,7 @@ tf-slim-mnist MNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweigh
 
 ### Chinese resource
 [如何评价tf-slim库](https://www.zhihu.com/question/53113870)
+
 [【Tensorflow】辅助工具篇——tensorflow slim(TF-Slim)介绍](http://blog.csdn.net/mao_xiao_feng/article/details/73409975)
 
 ## Setting up datarun `python datasets/download_and_convert_mnist.py` to create [train, test].tfrecords files containing MNIST databy default (unless you specify `--directory`) they will be put into /tmp/mnist
