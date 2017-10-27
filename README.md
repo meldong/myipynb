@@ -1,5 +1,5 @@
 ## TensorFlow-Slim
-TF-Slim ((tf.contrib.slim)) is a lightweight library for defining, training and evaluating complex models in TensorFlow. Components of tf-slim can be freely mixed with native tensorflow.
+TF-Slim (tf.contrib.slim) is a lightweight library for defining, training and evaluating complex models in TensorFlow. Components of tf-slim can be freely mixed with native tensorflow.
 
 ### Official resource
 [tensorflow/tensorflow/contrib/slim/](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim)
