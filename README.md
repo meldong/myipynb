@@ -1,4 +1,10 @@
-# tf-slim-mnistMNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweight library over Tensorflow, you can read more about it [here](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim) and [here](https://github.com/mnuke/tf-slim-mnist) is a good ipython notebook about it
+# tf-slim-mnist
+MNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweight library over Tensorflow, you can read more about it [here](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim) and [here](https://github.com/mnuke/tf-slim-mnist) is a good ipython notebook about it
+
+Chinese resource
+[如何评价tf-slim库](https://www.zhihu.com/question/53113870)
+[【Tensorflow】辅助工具篇——tensorflow slim(TF-Slim)介绍](http://blog.csdn.net/mao_xiao_feng/article/details/73409975)
+
 ## Setting up datarun `python datasets/download_and_convert_mnist.py` to create [train, test].tfrecords files containing MNIST databy default (unless you specify `--directory`) they will be put into /tmp/mnist
 ## RunningRun the training, validation, and tensorboard concurrently. The results of the training and validation should show up in tensorboard.
 ### Running the trainingrun `mnist_train.py` which will read train.tfrecords using an input queue and output its model checkpoints, and summaries to the log directory (you can specify it with `--log_dir`)
