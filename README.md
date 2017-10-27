@@ -18,14 +18,8 @@ tf-slim-mnist MNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweigh
 
 [【Tensorflow】辅助工具篇——tensorflow slim(TF-Slim)介绍](http://blog.csdn.net/mao_xiao_feng/article/details/73409975)
 
-## Setting up datarun `python datasets/download_and_convert_mnist.py` to create [train, test].tfrecords files containing MNIST databy default (unless you specify `--directory`) they will be put into /tmp/mnist
-## RunningRun the training, validation, and tensorboard concurrently. The results of the training and validation should show up in tensorboard.
-### Running the trainingrun `mnist_train.py` which will read train.tfrecords using an input queue and output its model checkpoints, and summaries to the log directory (you can specify it with `--log_dir`)
-### Running the validationrun `mnist_eval.py` which will read test.tfrecords using an input queue, and also read the train models checkpoints from `log/train` (by default). It will then load the model at that checkpoint and run it on the testing examples, outputting the summaries and log to its own folder `log/eval` (you can specify it with `--log_dir`)
-### Running tensorboardTensorboard allows you to keep track of your training in a nice and visual way. It will read the logs from the training and validation and should update on its own though you may have to refresh the page manually sometimes.
-Make sure both training and validation output their summaries to one log directory and preferably under their own folder. Run `tensorboard --logdir=log` (replace log with your own log folder if you changed it).
-If each process has its own folder then train and validation should have their own colour and checkbox
-## Notes
+# Tensorflow Object Detection API
+
 ### Woah, data input seems pretty different from what it used to be
 Tensorflow has really changed the way they're doing data input (for the better!) and though the new way seems pretty complicated (with queue runners etc...) it isn't that bad and can potentially make everything much faster, better.
 I'm trying to keep up with all the changes but if something seems off to you, then please open an issue or create a pull request!
