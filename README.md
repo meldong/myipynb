@@ -1,11 +1,15 @@
 # tf-slim
 tf-slim-mnist MNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweight library over Tensorflow.
 
+### Official resource
+
 [tensorflow/tensorflow/contrib/slim/](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim)
 
 [tensorflow/models/research/slim/](https://github.com/tensorflow/models/tree/master/research/slim)
 
 [tensorflow/models/research/inception/inception/slim/](https://github.com/tensorflow/models/tree/master/research/inception/inception/slim)
+
+### English resource
 
 [mnuke/tf-slim-mnist](https://github.com/mnuke/tf-slim-mnist)
 
