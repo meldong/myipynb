@@ -1,4 +1,4 @@
-## tf-slim
+## TensorFlow-Slim
 tf-slim-mnist MNIST tutorial with Tensorflow Slim (tf.contrib.slim) a lightweight library over Tensorflow.
 
 ### Official resource
