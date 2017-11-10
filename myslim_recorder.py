@@ -1,10 +1,12 @@
-"""Converts data to TFRecords of TF-Example protos.
-This module reads the files that make up the Flowers data and creates two 
-TFRecord datasets: one for train and one for test. Each TFRecord dataset 
-is comprised of a set of TF-Example protocol buffers, each of which 
-contain a single image and label.
-"""
+"""Converts image data to TFRecords of TF-Example protos.
 
+This module reads the images files and creates two TFRecord datasets:
+one for train and one for test. Each TFRecord dataset is comprised of a set of
+TF-Example protocol buffers, each of which contain a single image and label.
+Adapted from the following source: https://github.com/tensorflow/models
+/blob/master/research/slim/datasets/download_and_convert_flowers.py
+
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,17 +18,44 @@ import sys
 
 import tensorflow as tf
 
-dataset_name = 'flower_photos'
-dataset_dir = '/tmp/mydata'
+# The name of dataset.
+_DATASET_NAME = 'flower'
 
-# The number of images in the validation set.
-_NUM_VALIDATION = 350
+# The dataset directory where the dataset is stored.
+_DATASET_DIR = '/tmp/mydata'
+
+# The name of label file.
+_LABELS_FILENAME = 'labels.txt'
+
+# The number of images in the testing set.
+_NUM_TEST = 350
 
 # Seed for repeatability.
 _RANDOM_SEED = 0
 
 # The number of shards per dataset split.
 _NUM_SHARDS = 5
+
+
+class ImageReader(object):
+  """Helper class that provides TensorFlow image coding utilities."""
+
+  def __init__(self):
+    # Initializes function that decodes RGB JPEG data.
+    self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
+    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
+
+  def read_image_dims(self, sess, image_data):
+    image = self.decode_jpeg(sess, image_data)
+    return image.shape[0], image.shape[1]
+
+  def decode_jpeg(self, sess, image_data):
+    image = sess.run(self._decode_jpeg,
+                     feed_dict={self._decode_jpeg_data: image_data})
+    assert len(image.shape) == 3
+    assert image.shape[2] == 3
+    return image
+
 
 def int64_feature(values):
   """Returns a TF-Feature of int64s.
@@ -68,24 +97,30 @@ def float_feature(values):
   return tf.train.Feature(float_list=tf.train.FloatList(value=values))
 
 
-class ImageReader(object):
-  """Helper class that provides TensorFlow image coding utilities."""
+def _image_to_tfexample(image_data, image_format, height, width, class_id):
+  return tf.train.Example(features=tf.train.Features(feature={
+      'image/encoded': bytes_feature(image_data),
+      'image/format': bytes_feature(image_format),
+      'image/class/label': int64_feature(class_id),
+      'image/height': int64_feature(height),
+      'image/width': int64_feature(width),
+  }))
 
-  def __init__(self):
-    # Initializes function that decodes RGB JPEG data.
-    self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
 
-  def read_image_dims(self, sess, image_data):
-    image = self.decode_jpeg(sess, image_data)
-    return image.shape[0], image.shape[1]
+def _write_label_file(labels_to_class_names, dataset_dir,
+                     filename=_LABELS_FILENAME):
+  """Writes a file with the list of class names.
 
-  def decode_jpeg(self, sess, image_data):
-    image = sess.run(self._decode_jpeg,
-                     feed_dict={self._decode_jpeg_data: image_data})
-    assert len(image.shape) == 3
-    assert image.shape[2] == 3
-    return image
+  Args:
+    labels_to_class_names: A map of (integer) labels to class names.
+    dataset_dir: The directory in which the labels file should be written.
+    filename: The filename where the class names are written.
+  """
+  labels_filename = os.path.join(dataset_dir, filename)
+  with tf.gfile.Open(labels_filename, 'w') as f:
+    for label in labels_to_class_names:
+      class_name = labels_to_class_names[label]
+      f.write('%d:%s\n' % (label, class_name))
 
 
 def _get_filenames_and_classes(dataset_dir):
@@ -99,7 +134,7 @@ def _get_filenames_and_classes(dataset_dir):
     A list of image file paths, relative to `dataset_dir` and the list of
     subdirectories, representing class names.
   """
-  dataset_root = os.path.join(dataset_dir, dataset_name)
+  dataset_root = os.path.join(dataset_dir, _DATASET_NAME + '_photos')
   directories = []
   class_names = []
   for filename in os.listdir(dataset_root):
@@ -118,32 +153,22 @@ def _get_filenames_and_classes(dataset_dir):
 
 
 def _get_dataset_filename(dataset_dir, split_name, shard_id):
-  output_filename = 'mydata_%s_%05d-of-%05d.tfrecord' % (
+  output_filename = '%s_%05d-of-%05d.tfrecord' % (
       split_name, shard_id, _NUM_SHARDS)
   return os.path.join(dataset_dir, output_filename)
-
-
-def _image_to_tfexample(image_data, image_format, height, width, class_id):
-  return tf.train.Example(features=tf.train.Features(feature={
-      'image/encoded': bytes_feature(image_data),
-      'image/format': bytes_feature(image_format),
-      'image/class/label': int64_feature(class_id),
-      'image/height': int64_feature(height),
-      'image/width': int64_feature(width),
-  }))
 
 
 def _convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
   """Converts the given filenames to a TFRecord dataset.
 
   Args:
-    split_name: The name of the dataset, either 'train' or 'validation'.
+    split_name: The name of the dataset, either 'train' or 'test'.
     filenames: A list of absolute paths to png or jpg images.
     class_names_to_ids: A dictionary from class names (strings) to ids
       (integers).
     dataset_dir: The directory where the converted datasets are stored.
   """
-  assert split_name in ['train', 'validation']
+  assert split_name in ['train', 'test']
 
   num_per_shard = int(math.ceil(len(filenames) / float(_NUM_SHARDS)))
 
@@ -179,37 +204,18 @@ def _convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
   sys.stdout.flush()
 
 
-def _write_label_file(labels_to_class_names, dataset_dir,
-                     filename='labels.txt'):
-  """Writes a file with the list of class names.
-
-  Args:
-    labels_to_class_names: A map of (integer) labels to class names.
-    dataset_dir: The directory in which the labels file should be written.
-    filename: The filename where the class names are written.
-  """
-  labels_filename = os.path.join(dataset_dir, filename)
-  with tf.gfile.Open(labels_filename, 'w') as f:
-    for label in labels_to_class_names:
-      class_name = labels_to_class_names[label]
-      f.write('%d:%s\n' % (label, class_name))
-
-
 def _clean_up_temporary_files(dataset_dir):
   """Removes temporary files used to create the dataset.
 
   Args:
     dataset_dir: The directory where the temporary files are stored.
   """
-  #filepath = os.path.join(dataset_dir, dataset_name)
-  #tf.gfile.Remove(filepath)
-
-  tmp_dir = os.path.join(dataset_dir, dataset_name)
+  tmp_dir = os.path.join(dataset_dir, _DATASET_NAME + '_photos')
   tf.gfile.DeleteRecursively(tmp_dir)
 
 
 def _dataset_exists(dataset_dir):
-  for split_name in ['train', 'validation']:
+  for split_name in ['train', 'test']:
     for shard_id in range(_NUM_SHARDS):
       output_filename = _get_dataset_filename(
           dataset_dir, split_name, shard_id)
@@ -219,39 +225,38 @@ def _dataset_exists(dataset_dir):
 
 
 def main(_):
-  """Runs the read and conversion operation.
+  """Runs the download and conversion operation."""
+  if not tf.gfile.Exists(_DATASET_DIR):
+    tf.gfile.MakeDirs(_DATASET_DIR)
+    print('Dataset files do not exist. Put them in the dir %s.' % _DATASET_DIR)
+    return
 
-  Args:
-    dataset_dir: The dataset directory where the dataset is stored.
-  """
-  if not tf.gfile.Exists(dataset_dir):
-    tf.gfile.MakeDirs(dataset_dir)
-
-  if _dataset_exists(dataset_dir):
+  if _dataset_exists(_DATASET_DIR):
     print('Dataset files already exist. Exiting without re-creating them.')
     return
 
-  photo_filenames, class_names = _get_filenames_and_classes(dataset_dir)
+  photo_filenames, class_names = _get_filenames_and_classes(_DATASET_DIR)
   class_names_to_ids = dict(zip(class_names, range(len(class_names))))
 
   # Divide into train and test:
   random.seed(_RANDOM_SEED)
   random.shuffle(photo_filenames)
-  training_filenames = photo_filenames[_NUM_VALIDATION:]
-  validation_filenames = photo_filenames[:_NUM_VALIDATION]
+  training_filenames = photo_filenames[_NUM_TEST:]
+  testing_filenames = photo_filenames[:_NUM_TEST]
 
-  # First, convert the training and validation sets.
+  # First, convert the training and testing sets.
   _convert_dataset('train', training_filenames, class_names_to_ids,
-                   dataset_dir)
-  _convert_dataset('validation', validation_filenames, class_names_to_ids,
-                   dataset_dir)
+                   _DATASET_DIR)
+  _convert_dataset('test', testing_filenames, class_names_to_ids,
+                   _DATASET_DIR)
 
   # Finally, write the labels file:
   labels_to_class_names = dict(zip(range(len(class_names)), class_names))
-  _write_label_file(labels_to_class_names, dataset_dir)
+  _write_label_file(labels_to_class_names, _DATASET_DIR)
 
-  _clean_up_temporary_files(dataset_dir)
+  #_clean_up_temporary_files(dataset_dir)
   print('\nFinished converting the dataset!')
+
 
 if __name__ == '__main__':
   tf.app.run()
