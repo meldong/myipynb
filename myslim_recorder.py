@@ -1,4 +1,4 @@
-"""(R2U) Converts image data to TFRecords of TF-Example protos.
+"""(R2U_KD) Converts image data to TFRecords of TF-Example protos.
 
 This module reads the images files and creates two TFRecord datasets:
 one for train and one for test. Each TFRecord dataset is comprised of a set of
